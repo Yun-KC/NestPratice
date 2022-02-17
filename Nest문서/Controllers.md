@@ -83,3 +83,122 @@ export class CatsController {
 > @Response(), @Res() 데코레이터를 사용할 때는 응답 객체(예: res.json(...) 또는 res.send(...))를 호출하여 일종의 응답을 발행해야 합니다. 그렇지 않으면 HTTP 서버가 중단됩니다.
 
 ## Resources
+
+Nest는 GET 뿐만 아니라 표준 HTTP 메서드인
+
+- @Get()
+- @Post()
+- @Put()
+- @Delete()
+- @Patch()
+- @Options()
+- @Head()
+- @All()
+
+데코레이터들을 제공합니다. 또 @All()는 이들 모두를 처리하는 엔드포인트를 정의합니다.
+
+## Route wildcards
+
+```js
+@Get('ab*cd') // abcd, abbbddcd, ab사이에아무거나들어가도됨cd,
+findAll() {
+  return 'This route uses a wildcard';
+}
+```
+
+별표는 와일드카드로 사용되며 모든 문자열 조합과 일치합니다.
+위의 코드에서 ab\*cd는 abcd, ab_cd, abecd에 매칭됩니다. \* 뿐만아니라
+
+- .
+- ?
+- \+
+- \*
+
+위 기호들은 정규표현식의 패턴으로써 라우팅 경로가 작동합니다.
+
+## Status code
+
+```js
+@Post()
+@HttpCode(204)
+create() {
+  return 'This action adds a new cat';
+}
+```
+
+@HttpCode() 데코레이터를 통해 상태코드를 바꿀 수 있습니다.  
+상태 코드는 다양한 요인에 따라 달라집니다. 이 경우에 라이브러리별 응답 객체를 (@Res() 데코레이터를 주입) 불러와 상태 코드를 지정할 수 있습니다.
+
+## Headers
+
+```js
+@Post()
+@Header('Cache-Control', 'none')
+create() {
+  return 'This action adds a new cat';
+}
+```
+
+@Header() 데코레이터를 통해 직접 응답 헤더를 지정할 수 있습니다.
+또는 라이브러리별 응답 객체를 사용하고 res.header()를 직접 호출할 수 있습니다.
+
+## Redirection
+
+응답을 특정 URL로 리디렉션하려면 @Redirect() 데코레이터 또는 라이브러리별 응답 객체를 사용하고 res.redirect()를 직접 호출할 수 있습니다.
+
+```js
+@Get('docs')
+@Redirect('https://docs.nestjs.com', 302)
+getDocs(@Query('version') version) {
+  if (version && version === '5') {
+    return { url: 'https://docs.nestjs.com/v5/' };
+  }
+}
+```
+
+@Redirect() 데코레이터는 인자에 url, 상태코드(기본 302) 입니다.
+Redirection URL을 동적으로 변경해야 한다면, 리턴 값으로 {"url": ~~, "statusCode": ~~ } 을 반환하면 @Redirect의 인자에 오버라이드됩니다.
+
+## Route parameters
+
+```js
+@Get(':id')
+findOne(@Param() params): string {
+  console.log(params.id); // {id: "~~"}
+  return `This action returns a #${params.id} cat`;
+}
+// 또는 특정 매개변수 토큰을 Param 데코레이터의 인자로 전달하고 직접 매개변수 토큰을 액세스할 수 있습니다.
+@Get(':id')
+findOne(@Param('id') id: string): string {
+  return `This action returns a #${id} cat`;
+}
+```
+
+요청 URL의 해당 위치에서 동적 값을 캡처하기 위해 라우팅 경로 Get('여기')에 경로 매개변수 토큰을 추가할 수 있습니다. 위 코드에서 Get(:id)의 경로 매개변수 토큰은 @Param() 데코레이터를 사용해 액세스할 수 있습니다.
+
+## Sub-Domain Routing
+
+```js
+@Controller({ host: 'admin.example.com' })
+export class AdminController {
+  @Get()
+  index(): string {
+    return 'Admin page';
+  }
+}
+```
+
+@Controller()에 호스트를 지정하여 요청의 HTTP 호스트가 특정 값과 일치하도록 요구하는 옵션을 사용할 수 있습니다.
+
+```js
+@Controller({ host: ':account.example.com' })
+export class AccountController {
+  @Get()
+  getInfo(@HostParam('account') account: string) {
+    return account;
+  }
+}
+```
+
+위 코드와 같이 호스트 옵션은 토큰을 사용하여 호스트 이름의 해당 위치에서 동적 값을 가져올 수 있습니다.
+해당 호스트 매개변수는 @HostParam() 데코레이터를 사용해 액세스할 수 있습니다.
